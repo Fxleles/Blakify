@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
 // ─── ICONS ──────────────────────────────────────────────────────────────────
@@ -90,131 +90,9 @@ const SocialIcon = ({ platform, size = 20 }) => {
   return icons[platform] || icons["Custom"];
 };
 
-// ─── DATA ───────────────────────────────────────────────────────────────────
-const salesData = [
-  { day: "01/03", v: 320, l: 180 }, { day: "02/03", v: 480, l: 240 },
-  { day: "03/03", v: 290, l: 145 }, { day: "04/03", v: 610, l: 310 },
-  { day: "05/03", v: 520, l: 260 }, { day: "06/03", v: 780, l: 390 },
-  { day: "07/03", v: 930, l: 460 }, { day: "08/03", v: 870, l: 430 },
-  { day: "09/03", v: 1020, l: 510 },
-];
-
-const funnelData = [
-  { name: "Visitantes", value: 1000, pct: 100 },
-  { name: "Dados pessoais", value: 740, pct: 74 },
-  { name: "Entrega", value: 580, pct: 58 },
-  { name: "Pagamento", value: 380, pct: 38 },
-  { name: "Confirmados", value: 280, pct: 28 },
-];
-
-const utmData = [
-  { source: "Instagram", medium: "ads", clicks: 450, conv: 82, revenue: "R$ 3.280", color: "#E1306C" },
-  { source: "Google", medium: "cpc", clicks: 320, conv: 64, revenue: "R$ 2.560", color: "#4285F4" },
-  { source: "Facebook", medium: "ads", clicks: 280, conv: 51, revenue: "R$ 2.040", color: "#1877F2" },
-  { source: "TikTok", medium: "organic", clicks: 190, conv: 28, revenue: "R$ 1.120", color: "#fff" },
-  { source: "WhatsApp", medium: "direct", clicks: 120, conv: 44, revenue: "R$ 1.760", color: "#25D366" },
-];
-
-const mockOrders = [
-  { id: "#FP-10291", produto: "Kit Premium 3x", valor: "R$ 119,70", status: "pago", gateway: "Masterpag", data: "09/03 14:32", cliente: "Maria Silva" },
-  { id: "#FP-10290", produto: "Produto Único", valor: "R$ 39,90", status: "pago", gateway: "Masterpag", data: "09/03 13:18", cliente: "João Santos" },
-  { id: "#FP-10289", produto: "Kit 2x", valor: "R$ 79,80", status: "aguardando", gateway: "Masterpag", data: "09/03 12:55", cliente: "Ana Pereira" },
-  { id: "#FP-10288", produto: "Kit Premium 3x", valor: "R$ 119,70", status: "pago", gateway: "Masterpag", data: "09/03 11:40", cliente: "Carlos Lima" },
-  { id: "#FP-10287", produto: "Produto Único", valor: "R$ 39,90", status: "expirado", gateway: "Masterpag", data: "09/03 10:22", cliente: "Fernanda Costa" },
-];
-
-const initGateways = [
-  {
-    id: 1, name: "Masterpag", status: true,
-    methods: { pix: true, cartao: false, boleto: false },
-    authType: "header_keys",
-    fieldDefs: [
-      { key: "pk", label: "x-public-key", placeholder: "pk_live_..." },
-      { key: "sk", label: "x-secret-key", placeholder: "sk_live_..." },
-      { key: "apiUrl", label: "API URL", placeholder: "https://...", full: true },
-    ],
-    fields: {
-      pk: "pk_live_FmYLBVwrssF7SnbRpJlavOQsh94A6iJk",
-      sk: "sk_live_ssYibIsx5sRjwWSXdXzZFNfHNU3pkB9BH0IuzAoTmapSEkjE",
-      apiUrl: "https://dcnmsoaogkbgkbwpldrp.supabase.co/functions/v1/pix-receive",
-    },
-    docs: "https://masterpag.com.br",
-  },
-  {
-    id: 2, name: "FreePay Brasil", status: false,
-    methods: { pix: true, cartao: true, boleto: false },
-    authType: "bearer_token",
-    note: "Autenticação Bearer Token — token gerado automaticamente via Client ID + Client Secret.",
-    fieldDefs: [
-      { key: "client_id", label: "Client ID", placeholder: "Seu Client ID da FreePay" },
-      { key: "client_secret", label: "Client Secret", placeholder: "Seu Client Secret da FreePay" },
-      { key: "apiUrl", label: "API URL", placeholder: "https://api.freepaybrasil.com.br/v1", full: true },
-    ],
-    fields: { client_id: "", client_secret: "", apiUrl: "https://api.freepaybrasil.com.br/v1" },
-    docs: "https://freepaybrasil.readme.io/reference/introdução",
-  },
-  {
-    id: 3, name: "Mercado Pago", status: false,
-    methods: { pix: true, cartao: true, boleto: true },
-    authType: "bearer_token",
-    fieldDefs: [
-      { key: "client_id", label: "Access Token", placeholder: "APP_USR-..." },
-      { key: "client_secret", label: "Public Key", placeholder: "APP_USR-..." },
-      { key: "apiUrl", label: "API URL", placeholder: "https://api.mercadopago.com", full: true },
-    ],
-    fields: { client_id: "", client_secret: "", apiUrl: "https://api.mercadopago.com" },
-    docs: "https://www.mercadopago.com.br/developers",
-  },
-  {
-    id: 4, name: "PagHiper", status: false,
-    methods: { pix: true, cartao: false, boleto: true },
-    authType: "header_keys",
-    fieldDefs: [
-      { key: "pk", label: "API Key", placeholder: "apk_..." },
-      { key: "sk", label: "API Token", placeholder: "Token de acesso" },
-      { key: "apiUrl", label: "API URL", placeholder: "https://api.paghiper.com", full: true },
-    ],
-    fields: { pk: "", sk: "", apiUrl: "https://api.paghiper.com" },
-    docs: "https://dev.paghiper.com",
-  },
-  {
-    id: 5, name: "PagSeguro", status: false,
-    methods: { pix: true, cartao: true, boleto: true },
-    authType: "bearer_token",
-    fieldDefs: [
-      { key: "client_id", label: "Client ID", placeholder: "Seu Client ID" },
-      { key: "client_secret", label: "Client Secret", placeholder: "Seu Client Secret" },
-      { key: "apiUrl", label: "API URL", placeholder: "https://api.pagseguro.com", full: true },
-    ],
-    fields: { client_id: "", client_secret: "", apiUrl: "https://api.pagseguro.com" },
-    docs: "https://dev.pagseguro.uol.com.br",
-  },
-];
-
-const initPixels = [
-  { id: 1, name: "Meta Principal", platform: "Meta", pixelId: "1234567890123456", status: true, global: true, events: { purchase: true, allSales: false } },
-  { id: 2, name: "Google Analytics 4", platform: "Google", pixelId: "G-XXXX123456", status: true, global: true, events: { purchase: true, allSales: true } },
-  { id: 3, name: "TikTok Pixel", platform: "TikTok", pixelId: "CXXXXXXXXXXXXXX", status: false, global: false, events: { purchase: true, allSales: false } },
-];
-
-const initWebhooks = [
-  {
-    id: 1, name: "Push Notificação", url: "https://webhookreceiver-ps6nryst2a-ey.a.run.app?key=k20z7dhq1wf2ka7g3qclxbmfbzwku5or",
-    status: true, tentativas: 142, sucesso: 140,
-    events: { payment_confirmed: true, payment_pending: false, payment_expired: false, checkout_started: false, refund: false },
-  },
-  {
-    id: 2, name: "CRM Integração", url: "https://meu-crm.com/webhook/blakify",
-    status: false, tentativas: 0, sucesso: 0,
-    events: { payment_confirmed: true, payment_pending: true, payment_expired: true, checkout_started: true, refund: true },
-  },
-];
-
-const mockProducts = [
-  { id: 1, name: "Kit Premium 3x", price: 119.70, slug: "kit-premium-3x", status: true, vendas: 48, color: "#6366f1" },
-  { id: 2, name: "Produto Único", price: 39.90, slug: "produto-unico", status: true, vendas: 127, color: "#8b5cf6" },
-  { id: 3, name: "Kit 2x Especial", price: 79.80, slug: "kit-2x-especial", status: false, vendas: 12, color: "#06b6d4" },
-];
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+const fmtBRL = (v: number) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const fmtDate = (d: string) => new Date(d).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }).replace(",", "");
 
 // ─── STYLES ─────────────────────────────────────────────────────────────────
 const css = `
@@ -452,6 +330,27 @@ const Toggle = ({ on, onChange }) => (
 // ─── VIEWS ───────────────────────────────────────────────────────────────────
 
 function Dashboard() {
+  const [stats, setStats] = useState<any>(null);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      fetch("/api/dashboard/stats").then(r => r.json()),
+      fetch("/api/orders?limit=5").then(r => r.json()),
+    ]).then(([s, o]) => {
+      setStats(s);
+      setOrders(o.orders || []);
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  }, []);
+
+  const salesData = stats?.daily || [];
+  const funnelData = [
+    { name: "Visitantes", value: stats?.visits || 0, pct: 100 },
+    { name: "Confirmados", value: stats?.paid_count || 0, pct: stats?.visits ? Math.round((stats.paid_count / stats.visits) * 100) : 0 },
+  ];
+
   return (
     <div className="fi">
       <div className="mb22">
@@ -460,11 +359,18 @@ function Dashboard() {
       </div>
 
       <div className="g4 mb14">
-        {[
-          { lbl: "Vendas Totais", val: "R$ 929,60", sub: "↑ 190.86% hoje", note: "11 pedidos", c: "#0dbb7c" },
-          { lbl: "Lucro Líquido", val: "R$ 433,30", sub: "↑ 442.3% hoje", note: "5 pagos", c: "#e0173a" },
-          { lbl: "Ticket Médio", val: "R$ 84,51", sub: "↑ 12.4% semana", note: "por pedido", c: "#f5a623" },
-          { lbl: "Conversão PIX", val: "45.45%", sub: "11 gerados", note: "5 pagos", c: "#3b82f6" },
+        {loading ? (
+          Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="card stat" style={{ opacity: 0.4 }}>
+              <div className="stat-lbl">Carregando...</div>
+              <div className="stat-val">—</div>
+            </div>
+          ))
+        ) : [
+          { lbl: "Vendas Totais", val: fmtBRL(stats?.total_revenue || 0), sub: `${stats?.total_orders || 0} pedidos`, note: "total geral", c: "#0dbb7c" },
+          { lbl: "Receita Paga", val: fmtBRL(stats?.paid_revenue || 0), sub: `${stats?.paid_count || 0} pagos`, note: "confirmado", c: "#e0173a" },
+          { lbl: "Ticket Médio", val: stats?.avg_ticket ? fmtBRL(stats.avg_ticket) : "R$ 0,00", sub: "por pedido", note: "média geral", c: "#f5a623" },
+          { lbl: "Conversão PIX", val: stats?.conversion ? `${stats.conversion}%` : "0%", sub: `${stats?.total_orders || 0} gerados`, note: `${stats?.paid_count || 0} pagos`, c: "#3b82f6" },
         ].map((s, i) => (
           <div key={i} className="card stat">
             <div className="stat-glow" style={{ background: s.c }} />
@@ -478,7 +384,7 @@ function Dashboard() {
 
       <div className="g2 mb14">
         <div className="card" style={{ padding: 18 }}>
-          <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 14 }}>Vendas & Lucro</div>
+          <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 14 }}>Vendas & Receita (7 dias)</div>
           <ResponsiveContainer width="100%" height={170}>
             <AreaChart data={salesData}>
               <defs>
@@ -519,27 +425,29 @@ function Dashboard() {
         <div className="card" style={{ padding: 18 }}>
           <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 4 }}>UTM / Origem das Vendas</div>
           <div style={{ fontSize: 10.5, color: "var(--t3)", marginBottom: 14 }}>Conversões por fonte de tráfego</div>
-          <table>
-            <thead><tr><th>Fonte</th><th>Cliques</th><th>Conv.</th><th>Receita</th></tr></thead>
-            <tbody>
-              {utmData.map((u, i) => (
-                <tr key={i}>
-                  <td>
-                    <div className="row gap6">
-                      <div style={{ width: 7, height: 7, borderRadius: "50%", background: u.color, flexShrink: 0 }} />
-                      <div>
-                        <div style={{ fontSize: 11.5, fontWeight: 600 }}>{u.source}</div>
-                        <div style={{ fontSize: 10, color: "var(--t3)" }}>{u.medium}</div>
+          {(stats?.utm_stats || []).length === 0 ? (
+            <div style={{ fontSize: 11.5, color: "var(--t3)", textAlign: "center", padding: "24px 0" }}>Nenhum dado UTM registrado ainda.</div>
+          ) : (
+            <table>
+              <thead><tr><th>Fonte</th><th>Conv.</th><th>Receita</th></tr></thead>
+              <tbody>
+                {(stats?.utm_stats || []).map((u: any, i: number) => (
+                  <tr key={i}>
+                    <td>
+                      <div className="row gap6">
+                        <div>
+                          <div style={{ fontSize: 11.5, fontWeight: 600 }}>{u.source || "direto"}</div>
+                          <div style={{ fontSize: 10, color: "var(--t3)" }}>{u.medium || "—"}</div>
+                        </div>
                       </div>
-                    </div>
-                  </td>
-                  <td style={{ fontSize: 11.5 }}>{u.clicks}</td>
-                  <td><span className="badge bg">{u.conv}</span></td>
-                  <td style={{ fontSize: 11.5, fontWeight: 700, color: "var(--green)" }}>{u.revenue}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    </td>
+                    <td><span className="badge bg">{u.conversions}</span></td>
+                    <td style={{ fontSize: 11.5, fontWeight: 700, color: "var(--green)" }}>{fmtBRL(Number(u.revenue))}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
 
         <div className="card" style={{ padding: 18 }}>
@@ -548,15 +456,19 @@ function Dashboard() {
             <span className="badge bp pu">AO VIVO</span>
           </div>
           <div className="col-gap">
-            {mockOrders.map((o, i) => (
+            {orders.length === 0 ? (
+              <div style={{ fontSize: 11.5, color: "var(--t3)", textAlign: "center", padding: "24px 0" }}>Nenhum pedido ainda.</div>
+            ) : orders.map((o: any, i: number) => (
               <div key={i} className="row gap10" style={{ padding: "9px 11px", background: "var(--s1)", borderRadius: 9, border: "1px solid var(--b1)" }}>
                 <div>
-                  <div style={{ fontSize: 12, fontWeight: 700 }}>{o.cliente}</div>
-                  <div style={{ fontSize: 10.5, color: "var(--t3)" }}>{o.produto}</div>
+                  <div style={{ fontSize: 12, fontWeight: 700 }}>{o.customer_name || "—"}</div>
+                  <div style={{ fontSize: 10.5, color: "var(--t3)" }}>{o.product_name || "—"}</div>
                 </div>
                 <div className="ml-a" style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: 12, fontWeight: 800, color: "var(--green)" }}>{o.valor}</div>
-                  <span className={`badge ${o.status === "pago" ? "bg" : o.status === "aguardando" ? "by" : "br"}`}>{o.status}</span>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: "var(--green)" }}>{fmtBRL(Number(o.amount))}</div>
+                  <span className={`badge ${o.status === "paid" ? "bg" : o.status === "pending" ? "by" : "br"}`}>
+                    {o.status === "paid" ? "pago" : o.status === "pending" ? "aguardando" : o.status}
+                  </span>
                 </div>
               </div>
             ))}
@@ -567,8 +479,25 @@ function Dashboard() {
   );
 }
 
-function Products({ onNew }) {
-  const [copied, setCopied] = useState(null);
+function Products({ onNew, refresh }: { onNew: () => void; refresh: number }) {
+  const [copied, setCopied] = useState<number | null>(null);
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(() => {
+    fetch("/api/products").then(r => r.json()).then(data => {
+      setProducts(data.products || []);
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  }, []);
+
+  useEffect(() => { load(); }, [load, refresh]);
+
+  const toggleStatus = async (id: number, current: boolean) => {
+    await fetch(`/api/products/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: !current }) });
+    load();
+  };
+
   return (
     <div className="fi">
       <div className="row jb mb22">
@@ -576,25 +505,27 @@ function Products({ onNew }) {
         <button className="btn btn-p" onClick={onNew}><Ic d={I.plus} size={13} /> Novo Produto</button>
       </div>
       <div className="ga">
-        {mockProducts.map((p, i) => (
+        {loading ? (
+          <div style={{ fontSize: 12, color: "var(--t3)", padding: "24px 0" }}>Carregando produtos...</div>
+        ) : products.map((p: any, i: number) => (
           <div key={p.id} className="card pc">
-            <div className="pc-bar" style={{ background: p.color }} />
+            <div className="pc-bar" style={{ background: p.color || "#6366f1" }} />
             <div className="row jb mb14" style={{ paddingTop: 6 }}>
               <div>
                 <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 1 }}>{p.name}</div>
-                <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: -.5 }}>R$ {p.price.toFixed(2).replace(".", ",")}</div>
+                <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: -.5 }}>{fmtBRL(Number(p.price))}</div>
               </div>
-              <Toggle on={p.status} onChange={() => {}} />
+              <Toggle on={p.status} onChange={() => toggleStatus(p.id, p.status)} />
             </div>
             <div style={{ display: "flex", gap: 7, marginBottom: 12 }}>
-              {[["Vendas", p.vendas], ["Gateway", "Masterpag"]].map(([lbl, val], j) => (
+              {[["Vendas", p.orders_count || 0], ["Status", p.status ? "Ativo" : "Inativo"]].map(([lbl, val]: any, j: number) => (
                 <div key={j} style={{ flex: 1, background: "var(--s2)", borderRadius: 7, padding: "7px 9px", textAlign: "center" }}>
                   <div style={{ fontSize: 13.5, fontWeight: 800 }}>{val}</div>
                   <div style={{ fontSize: 9.5, color: "var(--t3)" }}>{lbl}</div>
                 </div>
               ))}
             </div>
-            <div className="copy-link" onClick={() => { setCopied(i); setTimeout(() => setCopied(null), 1400); }}>
+            <div className="copy-link" onClick={() => { navigator.clipboard.writeText(`blakify.io/c/${p.slug}`); setCopied(i); setTimeout(() => setCopied(null), 1400); }}>
               <span>blakify.io/c/{p.slug}</span>
               <Ic d={copied === i ? I.check : I.copy} size={12} />
             </div>
@@ -615,7 +546,21 @@ function Products({ onNew }) {
 
 function Orders() {
   const [filter, setFilter] = useState("todos");
-  const filtered = filter === "todos" ? mockOrders : filter === "pago" ? mockOrders.filter(o => o.status === "pago") : mockOrders.filter(o => o.status !== "pago");
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const status = filter === "pago" ? "paid" : filter === "outros" ? "pending,expired" : undefined;
+    const url = status ? `/api/orders?status=${status}` : "/api/orders";
+    fetch(url).then(r => r.json()).then(data => {
+      setOrders(data.orders || []);
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  }, [filter]);
+
+  const statusLabel = (s: string) => s === "paid" ? "pago" : s === "pending" ? "aguardando" : s === "expired" ? "expirado" : s;
+  const statusClass = (s: string) => s === "paid" ? "bg" : s === "pending" ? "by" : "br";
+
   return (
     <div className="fi">
       <div className="mb22"><div className="sec-t">Pedidos</div><div className="sec-s">Histórico completo de transações</div></div>
@@ -624,7 +569,7 @@ function Orders() {
           <div className="tabs" style={{ marginBottom: 0 }}>
             {["todos", "pago", "outros"].map(t => (
               <div key={t} className={`tab ${filter === t ? "on" : ""}`} onClick={() => setFilter(t)}>
-                {t === "todos" ? "Todos" : t === "pago" ? "✓ Pagos" : "Pendentes / Expirados"}
+                {t === "todos" ? "Todos" : t === "pago" ? "Pagos" : "Pendentes / Expirados"}
               </div>
             ))}
           </div>
@@ -636,15 +581,19 @@ function Orders() {
           <table>
             <thead><tr><th>ID</th><th>Cliente</th><th>Produto</th><th>Valor</th><th>Gateway</th><th>Status</th><th>Data</th><th></th></tr></thead>
             <tbody>
-              {filtered.map((o, i) => (
+              {loading ? (
+                <tr><td colSpan={8} style={{ textAlign: "center", padding: 24, color: "var(--t3)", fontSize: 12 }}>Carregando...</td></tr>
+              ) : orders.length === 0 ? (
+                <tr><td colSpan={8} style={{ textAlign: "center", padding: 24, color: "var(--t3)", fontSize: 12 }}>Nenhum pedido encontrado.</td></tr>
+              ) : orders.map((o: any, i: number) => (
                 <tr key={i}>
-                  <td><span style={{ fontFamily: "monospace", fontSize: 11, color: "var(--acc)" }}>{o.id}</span></td>
-                  <td style={{ fontWeight: 600 }}>{o.cliente}</td>
-                  <td style={{ fontSize: 11.5, color: "var(--t2)" }}>{o.produto}</td>
-                  <td style={{ fontWeight: 800, color: "var(--green)" }}>{o.valor}</td>
-                  <td><span className="badge bb">{o.gateway}</span></td>
-                  <td><span className={`badge ${o.status === "pago" ? "bg" : o.status === "aguardando" ? "by" : "br"}`}>{o.status}</span></td>
-                  <td style={{ fontSize: 10.5, color: "var(--t3)" }}>{o.data}</td>
+                  <td><span style={{ fontFamily: "monospace", fontSize: 11, color: "var(--acc)" }}>{o.order_code}</span></td>
+                  <td style={{ fontWeight: 600 }}>{o.customer_name || "—"}</td>
+                  <td style={{ fontSize: 11.5, color: "var(--t2)" }}>{o.product_name || "—"}</td>
+                  <td style={{ fontWeight: 800, color: "var(--green)" }}>{fmtBRL(Number(o.amount))}</td>
+                  <td><span className="badge bb">{o.gateway || "—"}</span></td>
+                  <td><span className={`badge ${statusClass(o.status)}`}>{statusLabel(o.status)}</span></td>
+                  <td style={{ fontSize: 10.5, color: "var(--t3)" }}>{fmtDate(o.created_at)}</td>
                   <td><button className="btn btn-g btn-sm btn-ico"><Ic d={I.eye} size={11} /></button></td>
                 </tr>
               ))}
@@ -657,15 +606,29 @@ function Orders() {
 }
 
 function Gateways() {
-  const [gws, setGws] = useState(initGateways);
-  const [editing, setEditing] = useState(null);
-  const [showKey, setShowKey] = useState({});
+  const [gws, setGws] = useState<any[]>([]);
+  const [editing, setEditing] = useState<number | null>(null);
+  const [showKey, setShowKey] = useState<Record<string, boolean>>({});
+  const [saving, setSaving] = useState<number | null>(null);
 
-  const toggleGw = (id) => setGws(g => g.map(gw => gw.id === id ? { ...gw, status: !gw.status } : gw));
-  const toggleMethod = (id, m) => setGws(g => g.map(gw => gw.id === id ? { ...gw, methods: { ...gw.methods, [m]: !gw.methods[m] } } : gw));
-  const updateField = (id, key, val) => setGws(g => g.map(gw => gw.id === id ? { ...gw, fields: { ...gw.fields, [key]: val } } : gw));
+  useEffect(() => {
+    fetch("/api/gateways").then(r => r.json()).then(data => setGws(data.gateways || []));
+  }, []);
 
-  const authBadge = (type) => type === "bearer_token"
+  const toggleGw = async (id: number, current: boolean) => {
+    await fetch(`/api/gateways/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: !current }) });
+    setGws(g => g.map(gw => gw.id === id ? { ...gw, status: !current } : gw));
+  };
+  const toggleMethod = (id: number, m: string) => setGws(g => g.map(gw => gw.id === id ? { ...gw, methods: { ...gw.methods, [m]: !gw.methods[m] } } : gw));
+  const updateField = (id: number, key: string, val: string) => setGws(g => g.map(gw => gw.id === id ? { ...gw, fields: { ...gw.fields, [key]: val } } : gw));
+  const saveGw = async (gw: any) => {
+    setSaving(gw.id);
+    await fetch(`/api/gateways/${gw.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ fields: gw.fields, methods: gw.methods }) });
+    setSaving(null);
+    setEditing(null);
+  };
+
+  const authBadge = (type: string) => type === "bearer_token"
     ? <span className="badge bb" style={{ fontSize: 9.5 }}>Bearer Token</span>
     : <span className="badge bgray" style={{ fontSize: 9.5 }}>Header Keys</span>;
 
@@ -676,85 +639,111 @@ function Gateways() {
         <button className="btn btn-p"><Ic d={I.plus} size={13} /> Adicionar</button>
       </div>
 
-      <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        {gws.map((gw) => (
-          <div key={gw.id} className="gw-row">
-            <div className="row jb">
-              <div style={{ flex: 1 }}>
-                <div className="row gap6 mb4" style={{ flexWrap: "wrap" }}>
-                  <div className="gw-name">{gw.name}</div>
-                  <div className={`sdot ${gw.status ? "g" : "r"}`} />
-                  {authBadge(gw.authType)}
-                  {gw.docs && (
-                    <a href={gw.docs} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: "var(--acc)", textDecoration: "none" }}>
-                      Ver docs ↗
-                    </a>
-                  )}
-                </div>
-                <div className="gw-methods">
-                  {Object.entries(gw.methods).map(([m, on]) => (
-                    <div key={m} className={`meth-btn ${on ? "on" : ""}`} onClick={() => toggleMethod(gw.id, m)}>
-                      <Ic d={m === "pix" ? I.pix : m === "cartao" ? I.cc : I.boleto} size={11} />
-                      {m === "pix" ? "PIX" : m === "cartao" ? "Cartão" : "Boleto"}
+      {gws.length === 0 ? (
+        <div className="card" style={{ padding: 24, textAlign: "center", color: "var(--t3)", fontSize: 12 }}>Carregando gateways...</div>
+      ) : (
+        <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+          {gws.map((gw: any) => {
+            const fieldDefs: any[] = gw.field_defs || [];
+            const fields: Record<string, string> = gw.fields || {};
+            const methods: Record<string, boolean> = gw.methods || {};
+            return (
+              <div key={gw.id} className="gw-row">
+                <div className="row jb">
+                  <div style={{ flex: 1 }}>
+                    <div className="row gap6 mb4" style={{ flexWrap: "wrap" }}>
+                      <div className="gw-name">{gw.name}</div>
+                      <div className={`sdot ${gw.status ? "g" : "r"}`} />
+                      {authBadge(gw.auth_type)}
+                      {gw.docs_url && (
+                        <a href={gw.docs_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: "var(--acc)", textDecoration: "none" }}>
+                          Ver docs ↗
+                        </a>
+                      )}
                     </div>
-                  ))}
-                </div>
-              </div>
-              <div className="row gap10">
-                <button className="btn btn-g btn-sm" onClick={() => setEditing(editing === gw.id ? null : gw.id)}>
-                  <Ic d={I.key} size={11} /> {editing === gw.id ? "Fechar" : "Chaves"}
-                </button>
-                <Toggle on={gw.status} onChange={() => toggleGw(gw.id)} />
-              </div>
-            </div>
-
-            {editing === gw.id && (
-              <div className="mt10" style={{ padding: "12px", background: "var(--s2)", borderRadius: "var(--rs)", border: "1px solid var(--b1)" }}>
-                {gw.note && (
-                  <div style={{ fontSize: 11, color: "var(--t2)", background: "rgba(224,23,58,.06)", border: "1px solid rgba(224,23,58,.15)", borderRadius: 7, padding: "7px 10px", marginBottom: 10 }}>
-                    ℹ️ {gw.note}
+                    <div className="gw-methods">
+                      {Object.entries(methods).map(([m, on]) => (
+                        <div key={m} className={`meth-btn ${on ? "on" : ""}`} onClick={() => toggleMethod(gw.id, m)}>
+                          <Ic d={m === "pix" ? I.pix : m === "cartao" ? I.cc : I.boleto} size={11} />
+                          {m === "pix" ? "PIX" : m === "cartao" ? "Cartão" : "Boleto"}
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                )}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                  {gw.fieldDefs.map(fd => (
-                    <div key={fd.key} style={{ gridColumn: fd.full ? "span 2" : "span 1" }}>
-                      <div className="lbl" style={{ marginBottom: 4 }}>{fd.label}</div>
-                      <div className="key-wrap">
-                        <input
-                          className="inp"
-                          type={fd.full ? "text" : (showKey[`${fd.key}${gw.id}`] ? "text" : "password")}
-                          value={gw.fields[fd.key] || ""}
-                          onChange={e => updateField(gw.id, fd.key, e.target.value)}
-                          placeholder={fd.placeholder}
-                        />
-                        {!fd.full && (
-                          <div className="key-eye" onClick={() => setShowKey(s => ({ ...s, [`${fd.key}${gw.id}`]: !s[`${fd.key}${gw.id}`] }))}>
-                            <Ic d={showKey[`${fd.key}${gw.id}`] ? I.eyeOff : I.eye} size={12} />
+                  <div className="row gap10">
+                    <button className="btn btn-g btn-sm" onClick={() => setEditing(editing === gw.id ? null : gw.id)}>
+                      <Ic d={I.key} size={11} /> {editing === gw.id ? "Fechar" : "Chaves"}
+                    </button>
+                    <Toggle on={gw.status} onChange={() => toggleGw(gw.id, gw.status)} />
+                  </div>
+                </div>
+
+                {editing === gw.id && (
+                  <div className="mt10" style={{ padding: "12px", background: "var(--s2)", borderRadius: "var(--rs)", border: "1px solid var(--b1)" }}>
+                    {gw.note && (
+                      <div style={{ fontSize: 11, color: "var(--t2)", background: "rgba(224,23,58,.06)", border: "1px solid rgba(224,23,58,.15)", borderRadius: 7, padding: "7px 10px", marginBottom: 10 }}>
+                        {gw.note}
+                      </div>
+                    )}
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                      {fieldDefs.map((fd: any) => (
+                        <div key={fd.key} style={{ gridColumn: fd.full ? "span 2" : "span 1" }}>
+                          <div className="lbl" style={{ marginBottom: 4 }}>{fd.label}</div>
+                          <div className="key-wrap">
+                            <input
+                              className="inp"
+                              type={fd.full ? "text" : (showKey[`${fd.key}${gw.id}`] ? "text" : "password")}
+                              value={fields[fd.key] || ""}
+                              onChange={e => updateField(gw.id, fd.key, e.target.value)}
+                              placeholder={fd.placeholder}
+                            />
+                            {!fd.full && (
+                              <div className="key-eye" onClick={() => setShowKey(s => ({ ...s, [`${fd.key}${gw.id}`]: !s[`${fd.key}${gw.id}`] }))}>
+                                <Ic d={showKey[`${fd.key}${gw.id}`] ? I.eyeOff : I.eye} size={12} />
+                              </div>
+                            )}
                           </div>
-                        )}
+                        </div>
+                      ))}
+                      <div style={{ gridColumn: "span 2" }}>
+                        <button className="btn btn-p btn-sm w-full" style={{ justifyContent: "center" }} onClick={() => saveGw(gw)}>
+                          {saving === gw.id ? <span className="pu">Salvando...</span> : <><Ic d={I.check} size={11} /> Salvar chaves</>}
+                        </button>
                       </div>
                     </div>
-                  ))}
-                  <div style={{ gridColumn: "span 2" }}>
-                    <button className="btn btn-p btn-sm w-full" style={{ justifyContent: "center" }} onClick={() => setEditing(null)}>
-                      <Ic d={I.check} size={11} /> Salvar chaves
-                    </button>
                   </div>
-                </div>
+                )}
               </div>
-            )}
-          </div>
-        ))}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
 
 function Pixels() {
-  const [pixels, setPixels] = useState(initPixels);
+  const [pixels, setPixels] = useState<any[]>([]);
 
-  const toggle = (id, field) => setPixels(p => p.map(px => px.id === id ? { ...px, [field]: !px[field] } : px));
-  const toggleEvent = (id, ev) => setPixels(p => p.map(px => px.id === id ? { ...px, events: { ...px.events, [ev]: !px.events[ev] } } : px));
+  useEffect(() => {
+    fetch("/api/pixels").then(r => r.json()).then(data => setPixels(data.pixels || []));
+  }, []);
+
+  const toggle = async (id: number, field: string, current: boolean) => {
+    await fetch(`/api/pixels/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ [field]: !current }) });
+    setPixels(p => p.map(px => px.id === id ? { ...px, [field]: !current } : px));
+  };
+  const toggleEvent = async (id: number, ev: string, current: boolean) => {
+    const px = pixels.find(p => p.id === id);
+    if (!px) return;
+    const events = { ...px.events, [ev]: !current };
+    await fetch(`/api/pixels/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ events }) });
+    setPixels(p => p.map(px2 => px2.id === id ? { ...px2, events } : px2));
+  };
+  const deletePixel = async (id: number) => {
+    await fetch(`/api/pixels/${id}`, { method: "DELETE" });
+    setPixels(p => p.filter(px => px.id !== id));
+  };
 
   return (
     <div className="fi">
@@ -764,7 +753,9 @@ function Pixels() {
       </div>
 
       <div className="col-gap mb22">
-        {pixels.map(px => (
+        {pixels.length === 0 ? (
+          <div className="card" style={{ padding: 18, textAlign: "center", color: "var(--t3)", fontSize: 12 }}>Nenhum pixel cadastrado ainda.</div>
+        ) : pixels.map((px: any) => (
           <div key={px.id} className="card px-card">
             <div className="row jb">
               <div className="row gap10">
@@ -776,12 +767,12 @@ function Pixels() {
                     <div style={{ fontSize: 13, fontWeight: 700 }}>{px.name}</div>
                     <span className={`badge ${px.status ? "bg" : "bgray"}`}>{px.status ? "ativo" : "inativo"}</span>
                   </div>
-                  <div style={{ fontSize: 11, color: "var(--t3)" }}>{px.platform} · <span style={{ fontFamily: "monospace" }}>{px.pixelId}</span></div>
+                  <div style={{ fontSize: 11, color: "var(--t3)" }}>{px.platform} · <span style={{ fontFamily: "monospace" }}>{px.pixel_id}</span></div>
                 </div>
               </div>
               <div className="row gap10">
-                <button className="btn btn-d btn-sm btn-ico"><Ic d={I.trash} size={11} /></button>
-                <Toggle on={px.status} onChange={() => toggle(px.id, "status")} />
+                <button className="btn btn-d btn-sm btn-ico" onClick={() => deletePixel(px.id)}><Ic d={I.trash} size={11} /></button>
+                <Toggle on={px.status} onChange={() => toggle(px.id, "status", px.status)} />
               </div>
             </div>
 
@@ -791,10 +782,10 @@ function Pixels() {
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 0 }}>
                 {[
-                  { key: "purchase", label: "✓ Venda paga" },
+                  { key: "purchase", label: "Venda paga" },
                   { key: "allSales", label: "Todas as tentativas" },
-                ].map(ev => (
-                  <div key={ev.key} className={`ev-chip ${px.events[ev.key] ? "on" : ""}`} onClick={() => toggleEvent(px.id, ev.key)}>
+                ].map((ev: any) => (
+                  <div key={ev.key} className={`ev-chip ${px.events?.[ev.key] ? "on" : ""}`} onClick={() => toggleEvent(px.id, ev.key, px.events?.[ev.key])}>
                     {ev.label}
                   </div>
                 ))}
@@ -804,7 +795,7 @@ function Pixels() {
               </div>
               <div className="row gap10 mt10">
                 <div style={{ fontSize: 10.5, color: "var(--t2)" }}>Aplicar em todos os produtos</div>
-                <div className="ml-a"><Toggle on={px.global} onChange={() => toggle(px.id, "global")} /></div>
+                <div className="ml-a"><Toggle on={px.is_global} onChange={() => toggle(px.id, "is_global", px.is_global)} /></div>
               </div>
             </div>
           </div>
@@ -826,11 +817,24 @@ function Pixels() {
 }
 
 function Webhooks() {
-  const [whs, setWhs] = useState(initWebhooks);
+  const [whs, setWhs] = useState<any[]>([]);
   const [tab, setTab] = useState("webhooks");
 
-  const toggleWh = (id) => setWhs(w => w.map(wh => wh.id === id ? { ...wh, status: !wh.status } : wh));
-  const toggleEv = (id, ev) => setWhs(w => w.map(wh => wh.id === id ? { ...wh, events: { ...wh.events, [ev]: !wh.events[ev] } } : wh));
+  useEffect(() => {
+    fetch("/api/webhooks").then(r => r.json()).then(data => setWhs(data.webhooks || []));
+  }, []);
+
+  const toggleWh = async (id: number, current: boolean) => {
+    await fetch(`/api/webhooks/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: !current }) });
+    setWhs(w => w.map(wh => wh.id === id ? { ...wh, status: !current } : wh));
+  };
+  const toggleEv = async (id: number, ev: string, current: boolean) => {
+    const wh = whs.find(w => w.id === id);
+    if (!wh) return;
+    const events = { ...wh.events, [ev]: !current };
+    await fetch(`/api/webhooks/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ events }) });
+    setWhs(w => w.map(wh2 => wh2.id === id ? { ...wh2, events } : wh2));
+  };
 
   const evLabels = {
     payment_confirmed: "✓ Venda paga",
@@ -857,7 +861,9 @@ function Webhooks() {
 
       {tab === "webhooks" && (
         <div className="col-gap">
-          {whs.map(wh => (
+          {whs.length === 0 ? (
+            <div className="card" style={{ padding: 24, textAlign: "center", color: "var(--t3)", fontSize: 12 }}>Nenhum webhook cadastrado ainda.</div>
+          ) : whs.map((wh: any) => (
             <div key={wh.id} className="card wh-card">
               <div className="row jb mb8">
                 <div>
@@ -869,37 +875,37 @@ function Webhooks() {
                 </div>
                 <div className="row gap8" style={{ marginLeft: 14 }}>
                   <button className="btn btn-g btn-sm">Testar</button>
-                  <Toggle on={wh.status} onChange={() => toggleWh(wh.id)} />
+                  <Toggle on={wh.status} onChange={() => toggleWh(wh.id, wh.status)} />
                 </div>
               </div>
 
               <div style={{ marginTop: 12, padding: "10px 12px", background: "var(--s2)", borderRadius: 9, border: "1px solid var(--b1)" }}>
                 <div style={{ fontSize: 10, fontWeight: 700, color: "var(--t3)", textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 7 }}>Disparar nos eventos</div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 0 }}>
-                  {Object.entries(wh.events).map(([ev, on]) => (
-                    <div key={ev} className={`ev-chip ${on ? "on" : ""}`} onClick={() => toggleEv(wh.id, ev)}>
-                      {evLabels[ev]}
+                  {Object.entries(wh.events || {}).map(([ev, on]: [string, any]) => (
+                    <div key={ev} className={`ev-chip ${on ? "on" : ""}`} onClick={() => toggleEv(wh.id, ev, on)}>
+                      {evLabels[ev] || ev}
                     </div>
                   ))}
                 </div>
               </div>
 
-              {wh.tentativas > 0 && (
+              {wh.attempts > 0 && (
                 <div className="row gap10 mt10">
                   <div style={{ background: "var(--s2)", borderRadius: 8, padding: "6px 12px", textAlign: "center" }}>
-                    <div style={{ fontSize: 14, fontWeight: 800 }}>{wh.tentativas}</div>
+                    <div style={{ fontSize: 14, fontWeight: 800 }}>{wh.attempts}</div>
                     <div style={{ fontSize: 9.5, color: "var(--t3)" }}>Tentativas</div>
                   </div>
                   <div style={{ background: "var(--s2)", borderRadius: 8, padding: "6px 12px", textAlign: "center" }}>
-                    <div style={{ fontSize: 14, fontWeight: 800, color: "var(--green)" }}>{wh.sucesso}</div>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: "var(--green)" }}>{wh.success_count}</div>
                     <div style={{ fontSize: 9.5, color: "var(--t3)" }}>Sucesso</div>
                   </div>
                   <div style={{ flex: 1 }}>
                     <div className="row jb mb4">
                       <span style={{ fontSize: 10, color: "var(--t3)" }}>Taxa</span>
-                      <span style={{ fontSize: 10.5, fontWeight: 700, color: "var(--green)" }}>{Math.round((wh.sucesso / wh.tentativas) * 100)}%</span>
+                      <span style={{ fontSize: 10.5, fontWeight: 700, color: "var(--green)" }}>{Math.round((wh.success_count / wh.attempts) * 100)}%</span>
                     </div>
-                    <div className="pbar"><div className="pfill" style={{ width: `${(wh.sucesso / wh.tentativas) * 100}%` }} /></div>
+                    <div className="pbar"><div className="pfill" style={{ width: `${(wh.success_count / wh.attempts) * 100}%` }} /></div>
                   </div>
                 </div>
               )}
@@ -1079,11 +1085,22 @@ vercel --prod`}</div>
   );
 }
 
-function NewProductModal({ onClose }) {
+function NewProductModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
   const [form, setForm] = useState({ name: "", price: "", slug: "", color: "#e0173a" });
   const [saved, setSaved] = useState(false);
-  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
-  const handleSave = () => { setSaved(true); setTimeout(() => { setSaved(false); onClose(); }, 900); };
+  const [error, setError] = useState("");
+  const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
+  const handleSave = async () => {
+    if (!form.name || !form.price || !form.slug) { setError("Preencha todos os campos."); return; }
+    setError("");
+    const res = await fetch("/api/products", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: form.name, price: parseFloat(form.price.replace(",", ".")), slug: form.slug, color: form.color }),
+    });
+    if (res.ok) { setSaved(true); onSaved(); setTimeout(() => { setSaved(false); onClose(); }, 900); }
+    else { const d = await res.json(); setError(d.error || "Erro ao salvar."); }
+  };
   return (
     <div className="overlay" onClick={onClose}>
       <div className="modal fi" onClick={e => e.stopPropagation()}>
@@ -1118,6 +1135,7 @@ function NewProductModal({ onClose }) {
               <div style={{ fontSize: 12, fontFamily: "monospace", color: "var(--acc)" }}>blakify.io/c/{form.slug || form.name.toLowerCase().replace(/\s+/g, "-")}</div>
             </div>
           )}
+          {error && <div style={{ fontSize: 11.5, color: "var(--red)", textAlign: "center" }}>{error}</div>}
           <button className="btn btn-p w-full" style={{ justifyContent: "center" }} onClick={handleSave}>
             {saved ? <><Ic d={I.check} size={13} /> Produto criado!</> : "Criar Produto"}
           </button>
@@ -1188,7 +1206,8 @@ export default function BlakifyDashboard() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [view, setView] = useState("dashboard");
   const [showNew, setShowNew] = useState(false);
-  const [toast, setToast] = useState(null);
+  const [toast, setToast] = useState<{ msg: string; id: number } | null>(null);
+  const [productsRefresh, setProductsRefresh] = useState(0);
 
   useEffect(() => {
     if (!loggedIn) return;
@@ -1293,7 +1312,7 @@ export default function BlakifyDashboard() {
 
           <div className="content">
             {view === "dashboard" && <Dashboard />}
-            {view === "products" && <Products onNew={() => setShowNew(true)} />}
+            {view === "products" && <Products onNew={() => setShowNew(true)} refresh={productsRefresh} />}
             {view === "orders" && <Orders />}
             {view === "gateways" && <Gateways />}
             {view === "pixels" && <Pixels />}
@@ -1303,7 +1322,7 @@ export default function BlakifyDashboard() {
         </main>
       </div>
 
-      {showNew && <NewProductModal onClose={() => setShowNew(false)} />}
+      {showNew && <NewProductModal onClose={() => setShowNew(false)} onSaved={() => setProductsRefresh(r => r + 1)} />}
 
       {toast && (
         <div className="toast" style={{

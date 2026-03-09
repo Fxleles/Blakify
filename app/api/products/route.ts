@@ -5,11 +5,11 @@ export async function GET() {
   try {
     const products = await sql`
       SELECT id, name, price, slug, color, status,
-             COALESCE((SELECT COUNT(*) FROM orders WHERE product_id = products.id AND status = 'paid'), 0)::int AS vendas
+             COALESCE((SELECT COUNT(*) FROM orders WHERE product_id = products.id AND status = 'paid'), 0)::int AS orders_count
       FROM products
       ORDER BY created_at DESC
     `
-    return NextResponse.json(products)
+    return NextResponse.json({ products })
   } catch (error) {
     console.error('[API products GET]', error)
     return NextResponse.json({ error: 'Erro ao buscar produtos' }, { status: 500 })

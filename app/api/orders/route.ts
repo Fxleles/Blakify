@@ -9,26 +9,26 @@ export async function GET(request: NextRequest) {
 
     const orders = status && status !== 'todos'
       ? await sql`
-          SELECT o.id, o.customer_name, o.customer_email, o.amount, o.status,
+          SELECT o.id, o.order_code, o.customer_name, o.customer_email, o.amount, o.status,
                  o.gateway, o.transaction_id, o.utm_source, o.utm_medium,
-                 o.created_at, p.name AS produto
+                 o.created_at, p.name AS product_name
           FROM orders o
           LEFT JOIN products p ON o.product_id = p.id
-          WHERE o.status = ${status}
+          WHERE o.status = ANY(${status.split(',')}::text[])
           ORDER BY o.created_at DESC
           LIMIT ${limit}
         `
       : await sql`
-          SELECT o.id, o.customer_name, o.customer_email, o.amount, o.status,
+          SELECT o.id, o.order_code, o.customer_name, o.customer_email, o.amount, o.status,
                  o.gateway, o.transaction_id, o.utm_source, o.utm_medium,
-                 o.created_at, p.name AS produto
+                 o.created_at, p.name AS product_name
           FROM orders o
           LEFT JOIN products p ON o.product_id = p.id
           ORDER BY o.created_at DESC
           LIMIT ${limit}
         `
 
-    return NextResponse.json(orders)
+    return NextResponse.json({ orders })
   } catch (error) {
     console.error('[API orders GET]', error)
     return NextResponse.json({ error: 'Erro ao buscar pedidos' }, { status: 500 })

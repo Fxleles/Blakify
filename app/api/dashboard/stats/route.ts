@@ -3,38 +3,25 @@ import { sql } from '@/lib/db'
 
 export async function GET() {
   try {
-    // Stats gerais
-    const [stats] = await sql`
+    const [agg] = await sql`
       SELECT
-        COALESCE(SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END), 0) AS total_vendas,
-        COALESCE(SUM(CASE WHEN status = 'paid' THEN amount * 0.85 ELSE 0 END), 0) AS lucro_liquido,
-        COUNT(*)::int AS total_pedidos,
-        COUNT(CASE WHEN status = 'paid' THEN 1 END)::int AS pedidos_pagos,
-        COUNT(CASE WHEN status = 'pending' THEN 1 END)::int AS pedidos_pendentes,
+        COALESCE(SUM(amount), 0)::float                                       AS total_revenue,
+        COALESCE(SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END), 0)::float AS paid_revenue,
+        COUNT(*)::int                                                          AS total_orders,
+        COUNT(CASE WHEN status = 'paid' THEN 1 END)::int                      AS paid_count,
         CASE WHEN COUNT(*) > 0
-          THEN ROUND((COUNT(CASE WHEN status = 'paid' THEN 1 END)::numeric / COUNT(*)) * 100, 2)
+          THEN ROUND((COUNT(CASE WHEN status = 'paid' THEN 1 END)::numeric / COUNT(*)) * 100, 1)
           ELSE 0
-        END AS taxa_conversao,
+        END::float                                                             AS conversion,
         CASE WHEN COUNT(CASE WHEN status = 'paid' THEN 1 END) > 0
-          THEN ROUND(SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END) / COUNT(CASE WHEN status = 'paid' THEN 1 END), 2)
+          THEN ROUND(SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END) /
+               COUNT(CASE WHEN status = 'paid' THEN 1 END), 2)
           ELSE 0
-        END AS ticket_medio
+        END::float                                                             AS avg_ticket
       FROM orders
-      WHERE created_at >= NOW() - INTERVAL '30 days'
     `
 
-    // Pedidos recentes
-    const recentOrders = await sql`
-      SELECT o.id, o.customer_name, o.amount, o.status, o.gateway, o.created_at,
-             p.name AS produto
-      FROM orders o
-      LEFT JOIN products p ON o.product_id = p.id
-      ORDER BY o.created_at DESC
-      LIMIT 5
-    `
-
-    // Dados do gráfico (últimos 9 dias)
-    const chartData = await sql`
+    const daily = await sql`
       SELECT
         TO_CHAR(DATE_TRUNC('day', created_at), 'DD/MM') AS day,
         COALESCE(SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END), 0)::float AS v,
@@ -45,22 +32,25 @@ export async function GET() {
       ORDER BY DATE_TRUNC('day', created_at)
     `
 
-    // UTM stats
-    const utmStats = await sql`
+    const utm_stats = await sql`
       SELECT
-        COALESCE(utm_source, 'Direto') AS source,
-        COALESCE(utm_medium, '-') AS medium,
-        COUNT(*)::int AS clicks,
-        COUNT(CASE WHEN status = 'paid' THEN 1 END)::int AS conv,
+        COALESCE(utm_source, 'direto')  AS source,
+        COALESCE(utm_medium, '-')       AS medium,
+        COUNT(CASE WHEN status = 'paid' THEN 1 END)::int AS conversions,
         COALESCE(SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END), 0)::float AS revenue
       FROM orders
       WHERE created_at >= NOW() - INTERVAL '30 days'
       GROUP BY utm_source, utm_medium
-      ORDER BY conv DESC
+      ORDER BY conversions DESC
       LIMIT 5
     `
 
-    return NextResponse.json({ stats, recentOrders, chartData, utmStats })
+    return NextResponse.json({
+      ...agg,
+      visits: 0,
+      daily,
+      utm_stats,
+    })
   } catch (error) {
     console.error('[API dashboard/stats]', error)
     return NextResponse.json({ error: 'Erro ao buscar stats' }, { status: 500 })

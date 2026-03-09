@@ -1,5 +1,5 @@
 -- Seed dos gateways padrão do Blakify
-INSERT INTO gateways (name, status, methods, auth_type, field_defs, fields, docs, note) VALUES
+INSERT INTO gateways (name, status, methods, auth_type, field_defs, fields, docs_url, note) VALUES
 (
   'Masterpag',
   true,
